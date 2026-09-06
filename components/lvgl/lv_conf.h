@@ -29,7 +29,7 @@
 /*Swap the 2 bytes of RGB565 color. Useful if the display has an 8-bit interface (e.g. SPI)*/
 // RGB565格式的颜色数据在内存中的存储顺序，0表示正常顺序，1表示交换顺序，根据显示屏的接口类型选择正确的值。
 // 对于SPI接口的显示屏，通常需要交换字节顺序，因此设置为1。
-#define LV_COLOR_16_SWAP 1
+#define LV_COLOR_16_SWAP 0
 
 /*Enable features to draw on transparent background.
  *It's required if opa, and transform_* style properties are used.
@@ -536,11 +536,17 @@
 /*Documentation of the widgets: https://docs.lvgl.io/latest/en/html/widgets/index.html*/
 // 以下是 LVGL 中各种内置组件（widgets）的使用配置选项。启用后，这些组件将可用于你的应用程序中，但会增加内存使用。根据需要启用所需的组件。
 
+// 似乎是 GUI-Guider-1.10.1-GA 的自定义宏
+// 用于启用视频播放组件
+#define LV_USE_TEXTPROGRESS  0
+// 推测是文本进度条
+#define LV_USE_VIDEO         0
+
 // 启用弧形组件，允许在界面中使用弧形图形元素，如进度环等。
 #define LV_USE_ARC        1
 
 // 启用自动布局组件，提供自动排列子对象的功能，支持水平、垂直和网格布局。
-#define LV_USE_BAR        1
+#define LV_USE_BAR        0
 
 // 启用按钮组件，允许在界面中使用可点击的按钮元素，支持文本、图标和事件处理。
 #define LV_USE_BTN        1
@@ -549,13 +555,13 @@
 #define LV_USE_BTNMATRIX  1
 
 // 启用画布组件，允许在界面中使用一个可绘制的区域，可以进行像素级的绘制操作，适用于自定义图形和动画。
-#define LV_USE_CANVAS     1
+#define LV_USE_CANVAS     0
 
 // 启用复选框组件，提供一个可切换的选项框，适用于需要多选功能的场景。
-#define LV_USE_CHECKBOX   1
+#define LV_USE_CHECKBOX   0
 
 // 启用下拉菜单组件，提供一个可展开的选项列表，适用于需要从多个选项中选择一个的场景。
-#define LV_USE_DROPDOWN   1   /*Requires: lv_label*/
+#define LV_USE_DROPDOWN   0   /*Requires: lv_label*/
 
 // 启用图像组件，允许在界面中显示图像元素，支持多种图像格式和变换功能。
 #define LV_USE_IMG        1   /*Requires: lv_label*/
@@ -564,16 +570,16 @@
 #define LV_USE_LABEL      1
 #if LV_USE_LABEL
     // 启用标签文本选择功能，允许用户选择标签中的文本内容，适用于需要复制或交互的文本显示场景。
-    #define LV_LABEL_TEXT_SELECTION 1 /*Enable selecting text of the label*/
+    #define LV_LABEL_TEXT_SELECTION 0 /*Enable selecting text of the label*/
     // 启用长文本提示功能，在标签文本过长无法完全显示时，提供额外的信息以加速绘制过程，适用于需要显示大量文本的场景。
-    #define LV_LABEL_LONG_TXT_HINT 1  /*Store some extra info in labels to speed up drawing of very long texts*/
+    #define LV_LABEL_LONG_TXT_HINT  0 /*Store some extra info in labels to speed up drawing of very long texts*/
 #endif
 
 // 启用线条组件，允许在界面中使用线条元素，支持多段线、箭头和线宽等功能。
-#define LV_USE_LINE       1
+#define LV_USE_LINE       0
 
 // 启用滚轮组件，提供一个可滚动选择的选项列表，适用于需要在有限空间内显示多个选项的场景，如时间选择器等。
-#define LV_USE_ROLLER     1   /*Requires: lv_label*/
+#define LV_USE_ROLLER     0   /*Requires: lv_label*/
 #if LV_USE_ROLLER
     // 在滚轮可见区域的上方和下方，会各准备 7 个“虚拟页面”供循环拖动。
     // 数值越大，循环动画越丝滑，越不容易出现露底（滚到空白处），但这会稍微增加重绘的计算量。
@@ -581,10 +587,10 @@
 #endif
 
 // 启用滑块组件，提供一个可拖动的滑块元素，适用于需要调整数值或进度的场景，如音量控制等。
-#define LV_USE_SLIDER     1   /*Requires: lv_bar*/
+#define LV_USE_SLIDER     0   /*Requires: lv_bar*/
 
 // 启用开关组件，提供一个可切换的开关元素，适用于需要二选一功能的场景，如设置开关等。
-#define LV_USE_SWITCH     1
+#define LV_USE_SWITCH     0
 
 // 启用文本区域组件，提供一个多行文本输入区域，支持文本编辑、光标控制和密码输入等功能，适用于需要用户输入大量文本的场景。
 #define LV_USE_TEXTAREA   1   /*Requires: lv_label*/
@@ -596,7 +602,7 @@
 #endif
 
 // 启用表格组件，提供一个用于显示和编辑表格数据的组件，支持单元格合并、排序和样式定制等功能，适用于需要展示结构化数据的场景。
-#define LV_USE_TABLE      1
+#define LV_USE_TABLE      0
 
 /*==================
  * EXTRA COMPONENTS
@@ -608,10 +614,10 @@
 // 以下是一些额外的组件选项，这些组件提供了更多的功能和交互方式，但可能会增加内存使用。根据需要启用所需的组件。
 
 // 启用动画图像组件，允许在界面中使用支持动画的图像元素，如 GIF 等，适用于需要展示动态内容的场景。
-#define LV_USE_ANIMIMG    1
+#define LV_USE_ANIMIMG    0
 
 // 启用日历组件，提供一个用于显示和选择日期的组件，支持月视图、年视图和日期范围选择等功能，适用于需要日期输入或显示的场景。
-#define LV_USE_CALENDAR   1
+#define LV_USE_CALENDAR   0
 #if LV_USE_CALENDAR
     // 定义一周的起始日。设置为 0 时，周一作为一周的第一天；设置为 1 时，周日作为一周的第一天。根据你的地区习惯选择合适的设置。
     #define LV_CALENDAR_WEEK_STARTS_MONDAY 0
@@ -630,34 +636,34 @@
 #endif  /*LV_USE_CALENDAR*/
 
 // 启用图表组件，提供一个用于显示数据图表的组件，支持折线图、柱状图和饼图等多种图表类型，适用于需要可视化数据的场景。
-#define LV_USE_CHART      1
+#define LV_USE_CHART      0
 
 // 启用颜色选择器组件，提供一个用于选择颜色的组件，支持多种颜色模式和预设颜色选项，适用于需要用户选择颜色的场景。
-#define LV_USE_COLORWHEEL 1
+#define LV_USE_COLORWHEEL 0
 
 // 启用图像按钮组件，提供一个结合了图像和按钮功能的组件，允许在按钮上显示图像，适用于需要图文结合的交互元素的场景。
-#define LV_USE_IMGBTN     1
+#define LV_USE_IMGBTN     0
 
 // 启用键盘组件，提供一个用于输入文本的虚拟键盘组件，支持多种布局和输入模式，适用于需要在触摸屏上输入文本的场景。
 #define LV_USE_KEYBOARD   1
 
 // 启用LED组件，提供一个用于显示状态的LED指示灯组件，支持多种颜色和闪烁模式，适用于需要状态指示的场景。
-#define LV_USE_LED        1
+#define LV_USE_LED        0
 
 // 启用列表组件，提供一个用于显示项目列表的组件，支持多列、图标和事件处理等功能，适用于需要展示项目集合的场景。
-#define LV_USE_LIST       1
+#define LV_USE_LIST       0
 
 // 启用菜单组件，提供一个用于显示层次化菜单的组件，支持多级菜单、图标和事件处理等功能，适用于需要复杂导航结构的场景。
-#define LV_USE_MENU       1
+#define LV_USE_MENU       0
 
 // 启用消息框组件，提供一个用于显示消息和提示的对话框组件，支持多种按钮配置和事件处理，适用于需要用户确认或显示重要信息的场景。
-#define LV_USE_METER      1
+#define LV_USE_METER      0
 
 // 启用仪表组件，提供一个用于显示数值的仪表盘组件，支持多种样式和刻度配置，适用于需要显示实时数据的场景。
-#define LV_USE_MSGBOX     1
+#define LV_USE_MSGBOX     0
 
 // 启用预加载组件，提供一个用于显示加载状态的组件，支持多种动画和样式配置，适用于需要显示加载进度的场景。
-#define LV_USE_SPAN       1
+#define LV_USE_SPAN       0
     #if LV_USE_SPAN
         /*A line text can contain maximum num of span descriptor */
         // 启用后，每行文本中可以包含的最大 span 描述符数量。span 描述符用于定义文本中的不同样式或颜色等属性。
@@ -686,7 +692,7 @@
 
 /*A simple, impressive and very complete theme*/
 // 启用默认主题，提供一个简单、完整且视觉效果不错的主题。启用后，LVGL 将使用这个主题来渲染界面元素，适用于需要快速开发和统一外观的场景。
-#define LV_USE_THEME_DEFAULT 1
+#define LV_USE_THEME_DEFAULT 0
 #if LV_USE_THEME_DEFAULT
 
     /*0: Light mode; 1: Dark mode*/
@@ -707,12 +713,12 @@
 /*A very simple theme that is a good starting point for a custom theme*/
 // 启用基本主题，提供一个非常简单的主题，适合作为自定义主题的起点。
 // 启用后，LVGL 将使用这个基本主题来渲染界面元素，适用于需要从头开始设计界面外观的场景。
-#define LV_USE_THEME_BASIC 1
+#define LV_USE_THEME_BASIC 0
 
 /*A theme designed for monochrome displays*/
 // 启用单色主题，提供一个专为单色显示屏设计的主题。
 // 启用后，LVGL 将使用这个主题来渲染界面元素，适用于需要在单色显示屏上使用 LVGL 的应用。
-#define LV_USE_THEME_MONO 1
+#define LV_USE_THEME_MONO 0
 
 /*-----------
  * Layouts
@@ -745,10 +751,10 @@
 /*API for open, read, etc*/
 // 启用 POSIX 文件系统接口，提供对 open、read 等 POSIX 标准文件操作函数的支持，使 LVGL 可以直接使用这些函数进行文件系统操作。
 // 启用后，你需要配置相关的路径和缓存设置，以确保文件系统功能
-#define LV_USE_FS_POSIX 1
+#define LV_USE_FS_POSIX 0
 #if LV_USE_FS_POSIX
-    #define LV_FS_POSIX_LETTER 'S'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
-    #define LV_FS_POSIX_PATH "/data"         /*Set the working directory. File/directory paths will be appended to it.*/
+    #define LV_FS_POSIX_LETTER '\0'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
+    #define LV_FS_POSIX_PATH ""         /*Set the working directory. File/directory paths will be appended to it.*/
     #define LV_FS_POSIX_CACHE_SIZE 0    /*>0 to cache this number of bytes in lv_fs_read()*/
 #endif
 
@@ -785,31 +791,31 @@
 /*PNG decoder library*/
 // 启用 PNG 解码库，提供对 PNG 图像格式的支持，使 LVGL 可以直接加载和显示 PNG 格式的图像。
 // 启用后，你需要确保 PNG 解码库已正确集成到你的项目中，以确保图像解码功能正常工作。
-#define LV_USE_PNG 1
+#define LV_USE_PNG 0
 
 /*BMP decoder library*/
 // 启用 BMP 解码库，提供对 BMP 图像格式的支持，使 LVGL 可以直接加载和显示 BMP 格式的图像。
 // BMP 是一种简单的位图图像格式，适用于需要基本图像支持的场景。
 // 启用后，你需要确保 BMP 解码库已正确集成到你的项目中，以确保图像解码功能正常工作。
-#define LV_USE_BMP 1
+#define LV_USE_BMP 0
 
 /* JPG + split JPG decoder library.
  * Split JPG is a custom format optimized for embedded systems. */
 // 启用 JPG 和分割 JPG 解码库，提供对 JPG 图像格式的支持，使 LVGL 可以直接加载和显示 JPG 格式的图像。
 // 分割 JPG 是一种针对嵌入式系统优化的自定义格式，可以在内存受限的环境中更高效地处理大图像。
 // 启用后，你需要确保 JPG 解码库已正确集成到你的项目中，以确保图像解码功能正常工作。适用于需要支持 JPG 图像的应用。
-#define LV_USE_SJPG 1
+#define LV_USE_SJPG 0
 
 /*GIF decoder library*/
 // 启用 GIF 解码库，提供对 GIF 图像格式的支持，使 LVGL 可以直接加载和显示 GIF 格式的图像。
 // GIF 是一种支持动画的图像格式，适用于需要展示动态内容的场景。
 // 启用后，你需要确保 GIF 解码库已正确集成到你的项目中，以确保图像解码功能正常工作。
 // 适用于需要支持 GIF 图像的应用。
-#define LV_USE_GIF 1
+#define LV_USE_GIF 0
 
 /*QR code library*/
 // 启用 QR 码库，提供对 QR 码的生成和显示支持，使 LVGL 可以直接生成和显示 QR 码图像。适用于需要在界面上展示 QR 码的应用，如支付码、链接等。
-#define LV_USE_QRCODE 1
+#define LV_USE_QRCODE 0
 
 /*FreeType library*/
 // 启用 FreeType 库，提供对 TrueType 和 OpenType 字体的支持，使 LVGL 可以直接加载和使用这些字体格式。
@@ -920,7 +926,7 @@
 /*Enable the examples to be built with the library*/
 // 启用示例，允许在构建库时包含示例代码，这些示例可以帮助你了解如何使用 LVGL 的各种功能和组件。
 // 启用后，你可以在项目中找到这些示例并进行测试和学习。
-#define LV_BUILD_EXAMPLES 1
+#define LV_BUILD_EXAMPLES 0
 
 /*===================
  * DEMO USAGE
