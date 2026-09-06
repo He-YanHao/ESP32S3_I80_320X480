@@ -1,6 +1,9 @@
 # 本地FATFS文件系统数据
 FATFS_DATA/
 
+# Guider工程
+Guider/
+
 # ESP-IDF 本身
 esp-idf/
 
