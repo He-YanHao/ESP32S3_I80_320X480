@@ -751,9 +751,9 @@
 /*API for open, read, etc*/
 // 启用 POSIX 文件系统接口，提供对 open、read 等 POSIX 标准文件操作函数的支持，使 LVGL 可以直接使用这些函数进行文件系统操作。
 // 启用后，你需要配置相关的路径和缓存设置，以确保文件系统功能
-#define LV_USE_FS_POSIX 0
+#define LV_USE_FS_POSIX 1
 #if LV_USE_FS_POSIX
-    #define LV_FS_POSIX_LETTER '\0'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
+    #define LV_FS_POSIX_LETTER 'S'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
     #define LV_FS_POSIX_PATH ""         /*Set the working directory. File/directory paths will be appended to it.*/
     #define LV_FS_POSIX_CACHE_SIZE 0    /*>0 to cache this number of bytes in lv_fs_read()*/
 #endif
@@ -804,7 +804,7 @@
 // 启用 JPG 和分割 JPG 解码库，提供对 JPG 图像格式的支持，使 LVGL 可以直接加载和显示 JPG 格式的图像。
 // 分割 JPG 是一种针对嵌入式系统优化的自定义格式，可以在内存受限的环境中更高效地处理大图像。
 // 启用后，你需要确保 JPG 解码库已正确集成到你的项目中，以确保图像解码功能正常工作。适用于需要支持 JPG 图像的应用。
-#define LV_USE_SJPG 0
+#define LV_USE_SJPG 1
 
 /*GIF decoder library*/
 // 启用 GIF 解码库，提供对 GIF 图像格式的支持，使 LVGL 可以直接加载和显示 GIF 格式的图像。
