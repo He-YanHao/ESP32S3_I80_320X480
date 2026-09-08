@@ -54,29 +54,16 @@
 // 0：使用 LVGL 内置的静态内存池
 // 1：使用自定义的 malloc/free 函数，通常是为了使用动态内存分配（如 heap）
 #define LV_MEM_CUSTOM 1
-#if LV_MEM_CUSTOM == 0
-    // 后续改为在PSRAM内自动分配
-    /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
-    // 定义 LVGL 内置内存池的大小，单位为字节。根据应用的内存需求调整此值，至少应为 2KB。
-    #define LV_MEM_SIZE (4U * 1024U * 1024U)          /*[bytes]*/
-    /*Set an address for the memory pool instead of allocating it as a normal array. Can be in external SRAM too.*/
-    // 如果 LV_MEM_CUSTOM 设置为 0（使用 LVGL 内置的内存管理），可以通过定义 LV_MEM_ADR 来指定内存池的起始地址。
-    #define LV_MEM_ADR 0     /*0: unused*/
-    /*Instead of an address give a memory allocator that will be called to get a memory pool for LVGL. E.g. my_malloc*/
-    #if LV_MEM_ADR == 0
-        #undef LV_MEM_POOL_INCLUDE       "esp_heap_caps.h"
-        #undef LV_MEM_POOL_ALLOC(size)   heap_caps_malloc(size, MALLOC_CAP_SPIRAM)
-    #endif
-#else       /*LV_MEM_CUSTOM*/
-    #define LV_MEM_CUSTOM_INCLUDE <stdlib.h>   /*Header for the dynamic memory function*/
-    #define LV_MEM_CUSTOM_ALLOC   malloc
-    #define LV_MEM_CUSTOM_FREE    free
-    #define LV_MEM_CUSTOM_REALLOC realloc
-#endif     /*LV_MEM_CUSTOM*/
+#if LV_MEM_CUSTOM
+    #define LV_MEM_CUSTOM_INCLUDE "esp_heap_caps.h"
+    #define LV_MEM_CUSTOM_ALLOC(size)   heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+    #define LV_MEM_CUSTOM_FREE          free
+    #define LV_MEM_CUSTOM_REALLOC(ptr, new_size) heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+#endif
 
 /*Number of the intermediate memory buffer used during rendering and other internal processing mechanisms.
  *You will see an error log message if there wasn't enough buffers. */
-#define LV_MEM_BUF_MAX_NUM 16
+#define LV_MEM_BUF_MAX_NUM 128
 
 /*Use the standard `memcpy` and `memset` instead of LVGL's own functions. (Might or might not be faster).*/
 #define LV_MEMCPY_MEMSET_STD 0
@@ -270,11 +257,11 @@
     *LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
     *LV_LOG_LEVEL_USER        Only logs added by the user
     *LV_LOG_LEVEL_NONE        Do not log anything*/
-    #define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
+    #define LV_LOG_LEVEL LV_LOG_LEVEL_INFO
 
     /*1: Print the log with 'printf';
     *0: User need to register a callback with `lv_log_register_print_cb()`*/
-    #define LV_LOG_PRINTF 0
+    #define LV_LOG_PRINTF 1
 
     /*Enable/disable LV_LOG_TRACE in modules that produces a huge number of logs*/
     #define LV_LOG_TRACE_MEM        1
@@ -754,7 +741,7 @@
 #define LV_USE_FS_POSIX 1
 #if LV_USE_FS_POSIX
     #define LV_FS_POSIX_LETTER 'S'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
-    #define LV_FS_POSIX_PATH ""         /*Set the working directory. File/directory paths will be appended to it.*/
+    #define LV_FS_POSIX_PATH "/storage"         /*Set the working directory. File/directory paths will be appended to it.*/
     #define LV_FS_POSIX_CACHE_SIZE 0    /*>0 to cache this number of bytes in lv_fs_read()*/
 #endif
 

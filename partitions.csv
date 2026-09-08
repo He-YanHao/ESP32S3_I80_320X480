@@ -7,4 +7,4 @@ phy_init,   data,   phy,      0xF000,    4K,
 # 用户应用分区
 factory,    app,    factory,  0x20000,   1M,
 # 文件系统分区
-storage,    data,   fat,      0x120000,  6M,
+storage,    data,   fat,      0x120000,  9M,
