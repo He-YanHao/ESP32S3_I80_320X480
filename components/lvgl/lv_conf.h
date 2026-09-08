@@ -53,12 +53,24 @@
 /*1: use custom malloc/free, 0: use the built-in `lv_mem_alloc()` and `lv_mem_free()`*/
 // 0：使用 LVGL 内置的静态内存池
 // 1：使用自定义的 malloc/free 函数，通常是为了使用动态内存分配（如 heap）
-#define LV_MEM_CUSTOM 1
-#if LV_MEM_CUSTOM
-    #define LV_MEM_CUSTOM_INCLUDE "esp_heap_caps.h"
-    #define LV_MEM_CUSTOM_ALLOC(size)   heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
-    #define LV_MEM_CUSTOM_FREE          free
-    #define LV_MEM_CUSTOM_REALLOC(ptr, new_size) heap_caps_realloc(ptr, new_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+#define LV_MEM_CUSTOM 0   /* 改为 0，启用内置内存池，但通过 LV_MEM_POOL_ALLOC 动态分配池 */
+#if LV_MEM_CUSTOM == 0
+    /* 内置内存池大小（当 LV_MEM_ADR != 0 时静态分配，此处动态分配则会被忽略） */
+    #define LV_MEM_SIZE (4U * 1024U * 1024U)   /* [bytes] */
+    /* 0 表示不使用固定地址，而是通过 LV_MEM_POOL_ALLOC 动态分配 */
+    #define LV_MEM_ADR 0
+    #if LV_MEM_ADR == 0
+        /* 先取消可能的默认定义，再重新定义为使用 PSRAM 的分配器 */
+        #undef LV_MEM_POOL_INCLUDE
+        #define LV_MEM_POOL_INCLUDE "esp_heap_caps.h"
+        #undef LV_MEM_POOL_ALLOC
+        #define LV_MEM_POOL_ALLOC(size) heap_caps_malloc(size, MALLOC_CAP_SPIRAM)
+    #endif
+#else   /* LV_MEM_CUSTOM == 1 分支（如果你需要使用完全自定义的分配器，可参考下方） */
+    #define LV_MEM_CUSTOM_INCLUDE <stdlib.h>
+    #define LV_MEM_CUSTOM_ALLOC   malloc
+    #define LV_MEM_CUSTOM_FREE    free
+    #define LV_MEM_CUSTOM_REALLOC realloc
 #endif
 
 /*Number of the intermediate memory buffer used during rendering and other internal processing mechanisms.
@@ -257,7 +269,7 @@
     *LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
     *LV_LOG_LEVEL_USER        Only logs added by the user
     *LV_LOG_LEVEL_NONE        Do not log anything*/
-    #define LV_LOG_LEVEL LV_LOG_LEVEL_INFO
+    #define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
 
     /*1: Print the log with 'printf';
     *0: User need to register a callback with `lv_log_register_print_cb()`*/
@@ -305,7 +317,7 @@
 /*1: Show the used memory and the memory fragmentation
  * Requires LV_MEM_CUSTOM = 0*/
 // 启用内存监视器，显示已使用的内存和内存碎片情况。仅当 LV_MEM_CUSTOM 设置为 0（使用 LVGL 内置的内存管理）时有效。
-#define LV_USE_MEM_MONITOR 0
+#define LV_USE_MEM_MONITOR 1
 #if LV_USE_MEM_MONITOR
     #define LV_USE_MEM_MONITOR_POS LV_ALIGN_BOTTOM_LEFT
 #endif
