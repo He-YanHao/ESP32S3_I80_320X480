@@ -72,19 +72,11 @@ void app_main(void) {
 
     // 8. 主循环：无限切换图片
     while (1) {
-        // 构造文件名：4位数字 + ".sjpg"
         snprintf(path, sizeof(path), "S:/%04d.jpg", idx);
-
-        // 设置图片源
         lv_img_set_src(img, path);
-
-        // 强制立即刷新显示
-        lv_refr_now(NULL);
-
+        lv_timer_handler();
         // 等待一段时间（例如 500ms）再切换下一张
         vTaskDelay(pdMS_TO_TICKS(1));
-
-        // 递增索引，循环
         idx++;
         if (idx >= num_files) {
             idx = 0;
