@@ -2,8 +2,8 @@ file(GLOB_RECURSE LVGL_SOURCES "src/*.c")
 
 idf_component_register(
     SRCS ${LVGL_SOURCES}
-    INCLUDE_DIRS "."
-    PRIV_INCLUDE_DIRS "src"
+    INCLUDE_DIRS "." "src"
+    PRIV_INCLUDE_DIRS ""
     REQUIRES esp_timer freertos driver
 )
 
