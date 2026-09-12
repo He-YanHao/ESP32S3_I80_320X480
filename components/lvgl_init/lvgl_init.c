@@ -7,11 +7,16 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 
+
 #define DRAW_BUF_LINES  60
 #define BUF_SIZE_PIXELS (LCD_H_RES * DRAW_BUF_LINES)
 #define BUF_SIZE_BYTES  (BUF_SIZE_PIXELS * sizeof(lv_color_t))
 
+// 
 static const char *TAG = "LVGL_INIT";
+
+// 全局递归互斥锁句柄 用于保护 LVGL 端口的访问，确保在多任务环境下对 LVGL 的调用是线程安全的，避免数据竞争和不一致问题
+static SemaphoreHandle_t lvgl_mutex = NULL;
 
 // 显示缓冲区指针（从 PSRAM 分配）
 static lv_color_t *buf1 = NULL;
@@ -41,6 +46,88 @@ static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t 
     lv_disp_flush_ready(drv);
 }
 
+/**
+ * @brief 锁定 LVGL 端口以确保线程安全
+ * 1. 使用 FreeRTOS 的递归互斥锁来保护 LVGL 端口的访问，确保在多任务环境下对 LVGL 的调用是线程安全的，避免数据竞争和不一致问题
+ * 2. 调用 xSemaphoreTakeRecursive() 来获取递归互斥锁，等待时间设置为 portMAX_DELAY 表示无限等待，直到成功获取锁
+ * 3. 在调用该函数之前应确保递归互斥锁已经成功创建，否则可能会导致未定义行为
+ * @return true 成功获取锁，false 获取锁失败
+ */
+bool lvgl_lock(void)
+{
+    // 如果递归互斥锁未创建，直接返回 false 表示获取锁失败
+    if (lvgl_mutex == NULL) return false;
+    // 调用 xSemaphoreTakeRecursive() 来获取递归互斥锁，等待时间设置为 portMAX_DELAY 表示无限等待，直到成功获取锁
+    return xSemaphoreTakeRecursive(lvgl_mutex, portMAX_DELAY) == pdTRUE;
+}
+
+/**
+ * @brief 带超时的锁定 LVGL 端口函数
+ * 1. 使用 FreeRTOS 的递归互斥锁来保护 LVGL 端口的访问，确保在多任务环境下对 LVGL 的调用是线程安全的，避免数据竞争和不一致问题
+ * 2. 调用 xSemaphoreTakeRecursive() 来获取递归互斥锁，等待时间根据传入的 timeout_ms 参数来设置，单位为毫秒
+ * 3. 在调用该函数之前应确保递归互斥锁已经成功创建，否则可能会导致未定义行为
+ * @param timeout_ms 等待时间，单位为毫秒，设置为 0 表示不等待直接返回
+ */
+bool lvgl_lock_timeout(uint32_t timeout_ms)
+{
+    // 如果递归互斥锁未创建，直接返回 false 表示获取锁失败
+    if (lvgl_mutex == NULL) return false;
+    // 根据传入的 timeout_ms 参数来设置等待时间。
+    return xSemaphoreTakeRecursive(lvgl_mutex, pdMS_TO_TICKS(timeout_ms)) == pdTRUE;
+}
+
+/**
+ * @brief 解锁 LVGL 端口
+ * 1. 使用 FreeRTOS 的递归互斥锁来保护 LVGL 端口的访问，确保在多任务环境下对 LVGL 的调用是线程安全的，避免数据竞争和不一致问题
+ * 2. 调用 xSemaphoreGiveRecursive() 来释放递归互斥锁，允许其他任务获取锁并访问 LVGL 端口
+ * 3. 在调用该函数之前应确保当前任务已经成功获取锁，否则可能会导致未定义行为
+ */
+void lvgl_unlock(void)
+{
+    // 如果递归互斥锁未创建，直接返回，不执行解锁操作
+    if (lvgl_mutex) {
+        xSemaphoreGiveRecursive(lvgl_mutex);
+    }
+}
+
+/**
+ * @brief LVGL 主循环任务函数
+ * @param arg 任务参数（未使用）
+ */
+static void lvgl_task(void *arg)
+{
+    uint32_t task_delay_ms = LVGL_MIN_SLEEP_MS;
+    ESP_LOGI(TAG, "Starting My LVGL task");
+
+    // 初始化 UI 界面
+    lvgl_lock();
+
+    // 
+
+
+    lvgl_unlock();
+
+    while (1) {
+        // 尝试锁定 LVGL 端口，如果成功则调用 lv_timer_handler() 来处理 LVGL 的心跳，并根据返回的建议延时调整 task_delay_ms 的值
+        lvgl_lock();
+        task_delay_ms = lv_timer_handler();
+        lvgl_unlock();
+
+        // 限制休眠时间范围：[LVGL_MIN_SLEEP_MS ms, LVGL_MAX_SLEEP_MS ms]
+        // 确保既不会过于频繁地调用 ui_tick() 导致性能问题，也能保持界面响应及时和流畅
+        if (task_delay_ms > LVGL_MAX_SLEEP_MS) {
+            task_delay_ms = LVGL_MAX_SLEEP_MS;
+        } else if (task_delay_ms < LVGL_MIN_SLEEP_MS) {
+            task_delay_ms = LVGL_MIN_SLEEP_MS;
+        }
+        vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+    }
+    // 后续会增加LVGL注销事件
+    ESP_LOGI(TAG, "Stopped LVGL task");
+    // 最后调用 vTaskDelete(NULL) 来删除当前任务，释放其占用的资源，并结束任务的执行。
+    vTaskDelete( NULL );
+}
+
 esp_err_t lvgl_init(void)
 {
     esp_err_t ret;
@@ -52,6 +139,14 @@ esp_err_t lvgl_init(void)
         return ret;
     }
     ESP_LOGI(TAG, "LCD initialized");
+
+    // 创建一个递归互斥锁来保护 LVGL 端口的访问，确保在多任务环境下对 LVGL 的调用是线程安全的，避免数据竞争和不一致问题。
+    lvgl_mutex = xSemaphoreCreateRecursiveMutex();
+    if (lvgl_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create LVGL recursive mutex");
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "LVGL recursive mutex created successfully");
 
     // 初始化 LVGL 核心
     lv_init();
@@ -84,6 +179,17 @@ esp_err_t lvgl_init(void)
         ESP_LOGE(TAG, "lv_disp_drv_register failed");
         return ESP_ERR_INVALID_STATE;
     }
+
+    // 创建一个新的 FreeRTOS 任务来运行 lvgl_task，该任务将负责调用 ui_tick() 来处理 UI 更新。
+    xTaskCreatePinnedToCoreWithCaps(lvgl_task,    // 任务函数
+                            "lvgl_task",          // 任务名称
+                            8192,                 // 栈大小（字节）
+                            NULL,                 // 任务参数
+                            2,                    // 优先级
+                            NULL,                 // 任务句柄（不需要可传 NULL）
+                            1,                    // 核心编号：0 = CPU0, 1 = CPU1
+                            MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT // 内存能力：确保分配到内部内存以获得更好的性能
+                        ); 
 
     ESP_LOGI(TAG, "LVGL initialized");
     return ESP_OK;

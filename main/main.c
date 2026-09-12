@@ -74,7 +74,6 @@ void app_main(void) {
     while (1) {
         snprintf(path, sizeof(path), "S:/%04d.jpg", idx);
         lv_img_set_src(img, path);
-        lv_timer_handler();
         // 等待一段时间（例如 500ms）再切换下一张
         vTaskDelay(pdMS_TO_TICKS(1));
         idx++;
