@@ -6,13 +6,13 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "gui_guider.h"
+#include "events_init.h"
+#include "custom.h"
 
+// 定义全局 UI 结构体
+lv_ui guider_ui;
 
-#define DRAW_BUF_LINES  60
-#define BUF_SIZE_PIXELS (LCD_H_RES * DRAW_BUF_LINES)
-#define BUF_SIZE_BYTES  (BUF_SIZE_PIXELS * sizeof(lv_color_t))
-
-// 
 static const char *TAG = "LVGL_INIT";
 
 // 全局递归互斥锁句柄 用于保护 LVGL 端口的访问，确保在多任务环境下对 LVGL 的调用是线程安全的，避免数据竞争和不一致问题
@@ -91,6 +91,38 @@ void lvgl_unlock(void)
 }
 
 /**
+ * @brief LVGL 极限刷新测试
+ */
+void lvgl_img_max_test(void)
+{
+    // 创建屏幕背景（黑色）
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
+
+    // 创建图片对象（固定用于显示）
+    lv_obj_t *img = lv_img_create(scr);
+    lv_obj_center(img);
+
+    // 准备图片路径（盘符 S: 对应 /storage）
+    char path[32];
+    const int num_files = 82;           // 根据实际文件数量（0000.sjpg ~ 0135.sjpg）
+    int idx = 0;
+
+    // 主循环：无限切换图片
+    while (1) {
+        snprintf(path, sizeof(path), "S:/%04d.jpg", idx);
+        lv_img_set_src(img, path);
+        // 等待一段时间（例如 1ms）再切换下一张
+        vTaskDelay(pdMS_TO_TICKS(1));
+        lv_timer_handler();
+        idx++;
+        if (idx >= num_files) {
+            idx = 0;
+        }
+    }
+}
+
+/**
  * @brief LVGL 主循环任务函数
  * @param arg 任务参数（未使用）
  */
@@ -101,10 +133,10 @@ static void lvgl_task(void *arg)
 
     // 初始化 UI 界面
     lvgl_lock();
-
-    // 
-
-
+    // 初始化 GUI Guider 生成的 UI
+    setup_ui(&guider_ui);       // 创建屏幕、加载屏幕
+    events_init(&guider_ui);    // 初始化事件回调
+    custom_init(&guider_ui);    // 初始化你自定义的代码
     lvgl_unlock();
 
     while (1) {
@@ -128,6 +160,9 @@ static void lvgl_task(void *arg)
     vTaskDelete( NULL );
 }
 
+/**
+ * @brief 初始化 LVGL 底层并且初始化 Guider
+ */
 esp_err_t lvgl_init(void)
 {
     esp_err_t ret;
@@ -152,7 +187,7 @@ esp_err_t lvgl_init(void)
     lv_init();
 
     // 从 PSRAM 分配显示缓冲区
-    size_t buffer_bytes = BUF_SIZE_PIXELS * sizeof(lv_color_t);
+    size_t buffer_bytes = LCD_H_RES * LCD_V_RES * sizeof(lv_color_t);
     buf1 = heap_caps_malloc(buffer_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     buf2 = heap_caps_malloc(buffer_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 
@@ -163,7 +198,7 @@ esp_err_t lvgl_init(void)
     ESP_LOGI(TAG, "Draw buffers allocated from PSRAM: %zu bytes each", buffer_bytes);
 
     // 初始化显示缓冲区
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, BUF_SIZE_PIXELS);
+    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, LCD_H_RES * LCD_V_RES);
 
     // 初始化显示驱动
     lv_disp_drv_init(&disp_drv);

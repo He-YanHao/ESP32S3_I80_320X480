@@ -56,29 +56,4 @@ void app_main(void) {
         return;
     }
     ESP_LOGI(TAG, "LVGL initialized");
-
-    // 5. 创建屏幕背景（黑色）
-    lv_obj_t *scr = lv_scr_act();
-    lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
-
-    // 6. 创建图片对象（固定用于显示）
-    lv_obj_t *img = lv_img_create(scr);
-    lv_obj_center(img);
-
-    // 7. 准备图片路径（盘符 S: 对应 /storage）
-    char path[32];
-    const int num_files = 82;           // 根据实际文件数量（0000.sjpg ~ 0135.sjpg）
-    int idx = 0;
-
-    // 8. 主循环：无限切换图片
-    while (1) {
-        snprintf(path, sizeof(path), "S:/%04d.jpg", idx);
-        lv_img_set_src(img, path);
-        // 等待一段时间（例如 500ms）再切换下一张
-        vTaskDelay(pdMS_TO_TICKS(1));
-        idx++;
-        if (idx >= num_files) {
-            idx = 0;
-        }
-    }
 }
