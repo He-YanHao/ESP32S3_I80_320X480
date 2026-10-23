@@ -4,8 +4,14 @@
 
 static const char *TAG = "bsp_exio";
 
+static bool s_exio_inited = false;
+
 esp_err_t bsp_exio_port_init(void)
 {
+    if (s_exio_inited) {
+        return ESP_OK;
+    }
+
     esp_err_t err = xl9555_init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "xl9555_init failed");
@@ -19,6 +25,7 @@ esp_err_t bsp_exio_port_init(void)
     xl9555_set_pin_mode(0, 3, true);   // BL_CTR
     xl9555_set_pin_mode(0, 4, true);   // LED1
 
+    s_exio_inited = true;
     ESP_LOGI(TAG, "EXIO pins initialized");
     return ESP_OK;
 }
