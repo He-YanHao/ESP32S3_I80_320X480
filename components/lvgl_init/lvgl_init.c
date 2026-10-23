@@ -1,200 +1,90 @@
-#include "lvgl_init.h"
-#include "bsp_lcd.h"
-#include "bsp_touch.h"
-#include "bsp_exio.h"
-#include "esp_lcd_panel_ops.h"
-#include "esp_lcd_panel_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_log.h"
+#include "lvgl_init.h"
+#include "lvgl.h"
+#include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_io.h"
+#include "esp_lcd_touch.h"
+#include "esp_lv_adapter.h"
+#include "esp_check.h"
 #include "esp_heap_caps.h"
-#include "gui_guider.h"
-#include "events_init.h"
-#include "custom.h"
+#include "esp_log.h"
 
-/* 定义全局 UI 结构体 */
-lv_ui guider_ui;
+// 引入你现有的 BSP 头文件
+#include "bsp_lcd.h"
+#include "bsp_touch.h" 
+// 注意：若要使用 esp_lv_adapter 的触摸注册，需要提供 esp_lcd_touch_handle_t
+// 这里假设你已通过 esp_lcd_touch 组件初始化了 GT1151Q，或通过适配层封装好了句柄
 
-static const char *TAG = "LVGL_INIT";
+static const char *TAG = "lvgl_init";
 
-/* 全局递归互斥锁，保护 LVGL 端口的线程安全 */
-static SemaphoreHandle_t lvgl_mutex = NULL;
+static esp_lcd_panel_handle_t    s_panel = NULL;
+static esp_lcd_panel_io_handle_t s_io    = NULL;
+static esp_lcd_touch_handle_t    s_touch = NULL; // 需要是 esp_lcd_touch 句柄
+static lv_display_t              *s_disp  = NULL;
 
-/* 显示缓冲区指针（从 PSRAM 分配） */
-static lv_color_t *buf1 = NULL;
-static lv_color_t *buf2 = NULL;
+/* 
+ * I80 在 esp_lvgl_adapter 中属于 "OTHER" 接口，不支持 TE 防撕裂，仅支持 NONE。
+ * 同时适配器不对 90°/270° 做旋转处理，旋转必须在 LCD 初始化阶段配置面板方向。
+ * 因此这里固定使用 ROTATE_0，并通过 bsp_lcd 内部（如 esp_lcd_panel_mirror / swap_xy）完成方向调整。
+ */
+#define ROTATION_ANGLE   ESP_LV_ADAPTER_ROTATE_0
 
-/* LVGL 显示驱动变量 */
-static lv_disp_draw_buf_t disp_buf;
-static lv_disp_drv_t disp_drv;
-static lv_disp_t *disp_handle = NULL;
+// 根据屏幕实际物理分辨率设置（ST7796 通常为 320x480）
+#define H_RES  LCD_H_RES
+#define V_RES  LCD_V_RES
 
-/* LVGL 触摸输入设备变量 */
-static lv_indev_drv_t indev_drv;
-static lv_indev_t *indev_handle = NULL;
-
-/* ============ LVGL 刷新回调 ============ */
-static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
-{
-    esp_err_t ret = bsp_lcd_draw_bitmap(
-        area->x1,
-        area->y1,
-        area->x2 + 1,
-        area->y2 + 1,
-        (uint8_t *)color_map
-    );
-
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "bsp_lcd_draw_bitmap failed: %d", ret);
-    }
-
-    lv_disp_flush_ready(drv);
-}
-
-/* ============ LVGL 触摸读取回调 ============ */
-static void lvgl_touch_read_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
-{
-    bsp_touch_point_t pt;
-    if (bsp_touch_read(&pt) == ESP_OK && pt.pressed) {
-        data->point.x = pt.x;
-        data->point.y = pt.y;
-        data->state = LV_INDEV_STATE_PRESSED;
-    } else {
-        data->state = LV_INDEV_STATE_RELEASED;
-    }
-}
-
-/* ============ 互斥锁 ============ */
-bool lvgl_lock(void)
-{
-    if (lvgl_mutex == NULL) return false;
-    return xSemaphoreTakeRecursive(lvgl_mutex, portMAX_DELAY) == pdTRUE;
-}
-
-bool lvgl_lock_timeout(uint32_t timeout_ms)
-{
-    if (lvgl_mutex == NULL) return false;
-    return xSemaphoreTakeRecursive(lvgl_mutex, pdMS_TO_TICKS(timeout_ms)) == pdTRUE;
-}
-
-void lvgl_unlock(void)
-{
-    if (lvgl_mutex) {
-        xSemaphoreGiveRecursive(lvgl_mutex);
-    }
-}
-
-/* ============ LVGL 主循环任务 ============ */
-static void lvgl_task(void *arg)
-{
-    uint32_t task_delay_ms = LVGL_MIN_SLEEP_MS;
-    ESP_LOGI(TAG, "Starting LVGL task");
-
-    /* 初始化 UI 界面 */
-    lvgl_lock();
-    setup_ui(&guider_ui);
-    events_init(&guider_ui);
-    custom_init(&guider_ui);
-    lvgl_unlock();
-
-    while (1) {
-        lvgl_lock();
-        task_delay_ms = lv_timer_handler();
-        lvgl_unlock();
-
-        if (task_delay_ms > LVGL_MAX_SLEEP_MS) {
-            task_delay_ms = LVGL_MAX_SLEEP_MS;
-        } else if (task_delay_ms < LVGL_MIN_SLEEP_MS) {
-            task_delay_ms = LVGL_MIN_SLEEP_MS;
-        }
-        vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
-    }
-
-    ESP_LOGI(TAG, "Stopped LVGL task");
-    vTaskDelete(NULL);
-}
-
-/* ============ LVGL 初始化 ============ */
 esp_err_t lvgl_init(void)
 {
     esp_err_t ret;
 
-    // 初始化 LCD 硬件
-    ret = bsp_lcd_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "bsp_lcd_init failed");
-        return ret;
-    }
-    ESP_LOGI(TAG, "LCD initialized");
+    // 1. 初始化你的 LCD 硬件（I80 + ST7796）
+    // bsp_lcd_init 内部已创建好 i80_bus、panel_io 和 panel
+    ESP_RETURN_ON_ERROR(bsp_lcd_init(), TAG, "bsp_lcd_init failed");
+    s_panel = bsp_lcd_get_panel();
+    s_io    = bsp_lcd_get_io();
+    ESP_RETURN_ON_FALSE(s_panel && s_io, ESP_ERR_INVALID_STATE, TAG, "LCD handles null");
 
-    // 初始化触摸屏
-    ret = bsp_touch_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "bsp_touch_init failed");
-        return ret;
-    }
-    ESP_LOGI(TAG, "Touch initialized");
+    // 2. 初始化触摸硬件
+    // 注意：bsp_touch_init 目前是裸 I2C 驱动，返回的不是 esp_lcd_touch_handle_t。
+    // 若要使用 esp_lv_adapter 的触摸注册，需要额外通过 esp_lcd_touch 封装 GT1151Q。
+    // 如果暂时不想改触摸驱动，可以注释掉这一段，改用旧版的手动注册 indev（见文末说明）。
+    ESP_RETURN_ON_ERROR(bsp_touch_init(), TAG, "bsp_touch_init failed");
+    // s_touch = ...; // 你需要从这里获取 esp_lcd_touch_handle_t
 
-    // 创建 LVGL 递归互斥锁
-    lvgl_mutex = xSemaphoreCreateRecursiveMutex();
-    if (lvgl_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create LVGL recursive mutex");
-        return ESP_FAIL;
-    }
-    ESP_LOGI(TAG, "LVGL recursive mutex created");
+    // 3. 初始化 esp_lv_adapter
+    esp_lv_adapter_config_t cfg = ESP_LV_ADAPTER_DEFAULT_CONFIG();
+    cfg.task_core_id = 1; // 绑定到核心 1
+    ESP_RETURN_ON_ERROR(esp_lv_adapter_init(&cfg), TAG, "adapter init failed");
 
-    // 初始化 LVGL 核心
-    lv_init();
+    // 4. 注册显示设备
+    // I80 属于 "OTHER" 接口，使用 SPI_WITH_PSRAM 或 SPI_WITHOUT_PSRAM 默认配置宏。
+    // 由于旧版代码从 PSRAM 分配帧缓冲，这里使用 WITH_PSRAM 版本。
+    esp_lv_adapter_display_config_t disp_cfg =
+        ESP_LV_ADAPTER_DISPLAY_SPI_WITH_PSRAM_DEFAULT_CONFIG(
+            s_panel,          // LCD panel handle
+            s_io,             // LCD panel IO handle (I80 需要)
+            H_RES,            // 水平分辨率
+            V_RES,            // 垂直分辨率
+            ROTATION_ANGLE    // 旋转角度（I80 仅支持 0/180，且建议在 LCD 内处理）
+        );
+    s_disp = esp_lv_adapter_register_display(&disp_cfg);
+    ESP_RETURN_ON_FALSE(s_disp, ESP_ERR_NO_MEM, TAG, "register display failed");
 
-    // 从 PSRAM 分配显示缓冲区
-    size_t buffer_bytes = LCD_H_RES * LCD_V_RES * sizeof(lv_color_t);
-    buf1 = heap_caps_malloc(buffer_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    buf2 = heap_caps_malloc(buffer_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (buf1 == NULL || buf2 == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate draw buffers from PSRAM");
-        return ESP_ERR_NO_MEM;
-    }
-    ESP_LOGI(TAG, "Draw buffers allocated: %zu bytes each", buffer_bytes);
-
-    // 初始化并注册显示驱动
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, LCD_H_RES * LCD_V_RES);
-
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.draw_buf = &disp_buf;
-    disp_drv.flush_cb = lvgl_flush_cb;
-    disp_drv.hor_res = LCD_H_RES;
-    disp_drv.ver_res = LCD_V_RES;
-    disp_drv.rotated = 0;
-
-    disp_handle = lv_disp_drv_register(&disp_drv);
-    if (disp_handle == NULL) {
-        ESP_LOGE(TAG, "lv_disp_drv_register failed");
-        return ESP_ERR_INVALID_STATE;
+    // 5. 注册触摸设备（可选，取决于你是否将 bsp_touch 封装为 esp_lcd_touch_handle_t）
+    if (s_touch != NULL) {
+        esp_lv_adapter_touch_config_t touch_cfg =
+            ESP_LV_ADAPTER_TOUCH_DEFAULT_CONFIG(s_disp, s_touch);
+        lv_indev_t *touch = esp_lv_adapter_register_touch(&touch_cfg);
+        ESP_RETURN_ON_FALSE(touch, ESP_ERR_NO_MEM, TAG, "register touch failed");
+    } else {
+        ESP_LOGW(TAG, "No esp_lcd_touch handle, skip adapter touch registration");
+        // 如果跳过这里，你需要像旧版一样手动创建 lv_indev 并注册 read_cb
     }
 
-    // 初始化并注册触摸输入设备
-    lv_indev_drv_init(&indev_drv);
-    indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read_cb = lvgl_touch_read_cb;
-    indev_handle = lv_indev_drv_register(&indev_drv);
-    if (indev_handle == NULL) {
-        ESP_LOGE(TAG, "lv_indev_drv_register failed");
-        return ESP_ERR_INVALID_STATE;
-    }
-    ESP_LOGI(TAG, "Touch input device registered");
+    // 6. 启动适配器任务
+    ESP_RETURN_ON_ERROR(esp_lv_adapter_start(), TAG, "adapter start failed");
 
-    // 创建 LVGL 任务
-    xTaskCreatePinnedToCoreWithCaps(
-        lvgl_task,
-        "lvgl_task",
-        32U * 1024U,
-        NULL,
-        2,
-        NULL,
-        1,
-        MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT
-    );
-
-    ESP_LOGI(TAG, "LVGL initialized");
+    ESP_LOGI(TAG, "LVGL adapter init ok (I80/OTHER), rotation=%d", ROTATION_ANGLE);
     return ESP_OK;
 }

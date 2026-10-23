@@ -1,23 +1,9 @@
-# 本地FATFS文件系统数据
-FATFS_DATA/
-
-# ==================== Guider 工程（排除缓存和生成文件） ====================
-Guider/build/
-Guider/generated/
-Guider/temp/
-Guider/ports/
-Guider/lvgl-simulator/
-Guider/lvgl/
-Guider/lib/
-Guider/import/
-Guider/custom/
-!Guider/Guider.guiguider
-!Guider/SCR.txt
-!Guider/LICENSE.txt
-!Guider/CMakeLists.txt
-
-# ESP-IDF 本身
-esp-idf/
+# guider 工程
+guider/licenses/
+guider/platform/
+!guider/guider.guiguider
+!guider/preview.png
+!guider/SCR.txt
 
 # ESP-IDF 构建输出
 build/
