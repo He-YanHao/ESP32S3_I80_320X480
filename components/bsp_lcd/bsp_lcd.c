@@ -34,7 +34,7 @@ static const char *TAG = "BSP_LCD";
 #define LCD_DATA15_GPIO  GPIO_NUM_4
 
 // DMA 传输限制 (100行，约64KB)
-#define MAX_TRANSFER_ROWS 100
+#define MAX_TRANSFER_ROWS LCD_V_RES
 #define MAX_TRANSFER_BYTES (LCD_H_RES * MAX_TRANSFER_ROWS * LCD_BYTES_PER_PIXEL)
 
 static esp_lcd_panel_io_handle_t s_io_handle = NULL;
