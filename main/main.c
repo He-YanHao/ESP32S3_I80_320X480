@@ -7,6 +7,7 @@
 #include "bsp_exio.h"
 #include "lvgl_init.h"
 #include "esp_vfs_fat.h"
+#include "esp_heap_caps.h"
 #include "lvgl.h"
 
 static const char *TAG = "MAIN";
@@ -56,6 +57,9 @@ void app_main(void) {
         return;
     }
     ESP_LOGI(TAG, "LVGL initialized");
+    ESP_LOGI(TAG, "heap after init: internal free=%u, psram free=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
     while (1) {
         ESP_LOGI(TAG, "running...");

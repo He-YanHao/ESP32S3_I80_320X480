@@ -33,6 +33,22 @@ static void *buf1 = NULL;
 static void *buf2 = NULL;
 
 /*
+ * DMA 颜色传输完成回调（中断上下文）。
+ *
+ * esp_lcd_panel_draw_bitmap() 只是把传输挂到 DMA 队列就返回，真正的发送是异步的。
+ * 必须等这笔传输结束后再通知 LVGL 复用绘制缓冲，否则双缓冲可能在 DMA 还没读完时
+ * 就被下一帧覆盖，表现为撕裂/花屏。
+ */
+static bool lvgl_color_trans_done_cb(esp_lcd_panel_io_handle_t io,
+                                     esp_lcd_panel_io_event_data_t *edata,
+                                     void *user_ctx)
+{
+    lv_display_t *disp = (lv_display_t *)user_ctx;
+    lv_display_flush_ready(disp);
+    return false;
+}
+
+/*
  * 手动 flush 回调：直接把 LVGL 原生 RGB565 数据交给 esp_lcd_panel_draw_bitmap 发送，
  * 不做任何字节交换。
  *
@@ -43,8 +59,13 @@ static void *buf2 = NULL;
  */
 static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 {
-    esp_lcd_panel_draw_bitmap(s_panel, area->x1, area->y1, area->x2 + 1, area->y2 + 1, px_map);
-    lv_display_flush_ready(disp);
+    esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel, area->x1, area->y1,
+                                              area->x2 + 1, area->y2 + 1, px_map);
+    if (err != ESP_OK) {
+        // 数据没发出去就不会有传输完成回调，这里必须直接放行，避免 LVGL 永久等待
+        ESP_LOGE(TAG, "draw_bitmap failed: %s", esp_err_to_name(err));
+        lv_display_flush_ready(disp);
+    }
 }
 
 /*
@@ -129,6 +150,13 @@ esp_err_t lvgl_init(void)
     lv_display_set_flush_cb(s_disp, lvgl_flush_cb);
     lv_display_set_buffers(s_disp, buf1, buf2, BUF_SIZE_BYTES, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
+    // 注册 I80 传输完成回调：DMA 真正发完后再让 LVGL 复用绘制缓冲
+    const esp_lcd_panel_io_callbacks_t cbs = {
+        .on_color_trans_done = lvgl_color_trans_done_cb,
+    };
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_register_event_callbacks(bsp_lcd_get_io(), &cbs, s_disp),
+                        TAG, "register io callbacks failed");
+
     // 5. 手动创建 LVGL 指针输入设备并绑定到该显示
     //    bsp_touch 是裸 I2C 驱动，没有 esp_lcd_touch_handle_t，所以不用 adapter 的触摸注册
     s_indev = lv_indev_create();
@@ -145,6 +173,13 @@ esp_err_t lvgl_init(void)
     lvgl_lock();
     setup_ui(&guider_ui);
     custom_init(&guider_ui);
+
+    // 打一条内存日志：用于评估 LV_MEM_SIZE（当前 256KB）是否过大
+    lv_mem_monitor_t mon;
+    lv_mem_monitor(&mon);
+    ESP_LOGI(TAG, "LVGL mem: used %u/%u (%u%%), max_used %u, frag %u%%",
+             (unsigned)(mon.total_size - mon.free_size), (unsigned)mon.total_size,
+             (unsigned)mon.used_pct, (unsigned)mon.max_used, (unsigned)mon.frag_pct);
     lvgl_unlock();
 
     ESP_LOGI(TAG, "LVGL init ok (manual display, I80)");

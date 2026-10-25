@@ -10,6 +10,8 @@ static const char *TAG = "xl9555";
 #define XL9555_SDA_PIN      2
 #define XL9555_I2C_SPEED    400000
 #define XL9555_DEV_ADDR     0x20
+/* I2C 传输超时（毫秒）：不能用 -1（永久等待），否则总线异常会卡死调用者 */
+#define XL9555_I2C_TIMEOUT_MS  50
 
 // 寄存器定义
 #define REG_INPUT_PORT_0     0x00
@@ -28,15 +30,15 @@ static esp_err_t write_reg(uint8_t reg, uint8_t data)
 {
     if (dev_handle == NULL) return ESP_ERR_INVALID_STATE;
     uint8_t write_buf[2] = {reg, data};
-    return i2c_master_transmit(dev_handle, write_buf, sizeof(write_buf), -1);
+    return i2c_master_transmit(dev_handle, write_buf, sizeof(write_buf), XL9555_I2C_TIMEOUT_MS);
 }
 
 static esp_err_t read_reg(uint8_t reg, uint8_t *data)
 {
     if (dev_handle == NULL || data == NULL) return ESP_ERR_INVALID_STATE;
-    esp_err_t err = i2c_master_transmit(dev_handle, &reg, 1, -1);
+    esp_err_t err = i2c_master_transmit(dev_handle, &reg, 1, XL9555_I2C_TIMEOUT_MS);
     if (err != ESP_OK) return err;
-    return i2c_master_receive(dev_handle, data, 1, -1);
+    return i2c_master_receive(dev_handle, data, 1, XL9555_I2C_TIMEOUT_MS);
 }
 
 static esp_err_t modify_reg(uint8_t reg, uint8_t bit_mask, bool set)

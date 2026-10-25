@@ -6,7 +6,7 @@
   "toolVendor": "NXP Semiconductors",
   "createDate": "2026-10-23",
   "createVersion": "2.0.1",
-  "lastModified": "2026-10-23T18:24:32.749Z",
+  "lastModified": "2026-10-25T16:44:28.715Z",
   "description": "",
   "metadata": {
     "board": {
@@ -84,16 +84,16 @@
         },
         "children": [
           {
-            "id": "button_MVLAF5WREQQ6",
-            "type": "button",
-            "name": "button_1",
-            "width": 100,
+            "id": "MVO13UBYRD1E",
+            "type": "slider",
+            "name": "slider_1_copy1_copy_copy_copy_copy_copy",
+            "width": 304,
             "width_unit": "px",
-            "height": 50,
+            "height": 31,
             "height_unit": "px",
-            "x": 0,
+            "x": 8,
             "x_unit": "px",
-            "y": 0,
+            "y": 419,
             "y_unit": "px",
             "align": "LV_ALIGN_TOP_LEFT",
             "style": {
@@ -102,28 +102,192 @@
                 "state": "LV_STATE_DEFAULT"
               }
             },
-            "children": [
-              {
-                "id": "label_MVLAF5WRKFAA",
-                "type": "label",
-                "name": "button_1_label",
-                "width": 0,
-                "width_unit": "content",
-                "height": 0,
-                "height_unit": "content",
-                "x": 0,
-                "x_unit": "px",
-                "y": 0,
-                "y_unit": "px",
-                "align": "LV_ALIGN_CENTER",
-                "style": {
-                  "LV_PART_MAIN|LV_STATE_DEFAULT": {
-                    "part": "LV_PART_MAIN",
-                    "state": "LV_STATE_DEFAULT"
-                  }
-                }
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO13S8UWNOI",
+            "type": "slider",
+            "name": "slider_1_copy1_copy_copy_copy_copy",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 10,
+            "x_unit": "px",
+            "y": 366,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
               }
-            ]
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO13QD2ZG78",
+            "type": "slider",
+            "name": "slider_1_copy1_copy_copy_copy",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 8,
+            "x_unit": "px",
+            "y": 318,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO13O324UAL",
+            "type": "slider",
+            "name": "slider_1_copy1_copy_copy",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 8,
+            "x_unit": "px",
+            "y": 270,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO13LEXYWWW",
+            "type": "slider",
+            "name": "slider_1_copy1_copy",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 8,
+            "x_unit": "px",
+            "y": 224,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO13AACOBL7",
+            "type": "slider",
+            "name": "slider_1_copy2",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 8,
+            "x_unit": "px",
+            "y": 127,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO139ZT0RBN",
+            "type": "slider",
+            "name": "slider_1_copy1",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 8,
+            "x_unit": "px",
+            "y": 175,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "MVO138S88KHC",
+            "type": "slider",
+            "name": "slider_1_copy",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 10,
+            "x_unit": "px",
+            "y": 75,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false,
+            "children": []
+          },
+          {
+            "id": "slider_MVO134AY37G6",
+            "type": "slider",
+            "name": "slider_1",
+            "width": 304,
+            "width_unit": "px",
+            "height": 31,
+            "height_unit": "px",
+            "x": 8,
+            "x_unit": "px",
+            "y": 30,
+            "y_unit": "px",
+            "align": "LV_ALIGN_TOP_LEFT",
+            "style": {
+              "LV_PART_MAIN|LV_STATE_DEFAULT": {
+                "part": "LV_PART_MAIN",
+                "state": "LV_STATE_DEFAULT"
+              }
+            },
+            "value": 50,
+            "value_anim": false
           }
         ]
       }

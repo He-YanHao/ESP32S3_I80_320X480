@@ -15,6 +15,10 @@ static const char *TAG = "bsp_touch";
 #define TOUCH_SDA_PIN       GPIO_NUM_41
 #define TOUCH_I2C_SPEED     400000
 #define TOUCH_DEV_ADDR      0x14
+/* I2C 单次传输超时：不能用 -1（永久等待），否则总线异常会冻结调用它的 LVGL 任务 */
+#define TOUCH_I2C_TIMEOUT_MS    50
+/* 总线恢复的最小间隔，避免每次读取失败都去复位总线 */
+#define TOUCH_RECOVER_INTERVAL_MS 1000
 
 /* ========== GT1151Q 寄存器 ========== */
 #define GT1151_REG_PID      0x8140      /* 产品 ID */
@@ -24,6 +28,30 @@ static const char *TAG = "bsp_touch";
 /* ========== 静态句柄 ========== */
 static i2c_master_bus_handle_t touch_bus = NULL;
 static i2c_master_dev_handle_t touch_dev = NULL;
+static TickType_t s_last_recover_tick = 0;
+static bool s_has_recovered = false;
+
+/* 通信失败时尝试恢复总线（限频），避免 I2C 卡死后再也无法读取触摸 */
+static void touch_try_recover(void)
+{
+    if (touch_bus == NULL) {
+        return;
+    }
+    TickType_t now = xTaskGetTickCount();
+    if (s_has_recovered &&
+            (now - s_last_recover_tick) < pdMS_TO_TICKS(TOUCH_RECOVER_INTERVAL_MS)) {
+        return;
+    }
+    s_has_recovered = true;
+    s_last_recover_tick = now;
+
+    esp_err_t err = i2c_master_bus_reset(touch_bus);
+    if (err == ESP_OK) {
+        ESP_LOGW(TAG, "I2C bus reset after touch read error");
+    } else {
+        ESP_LOGE(TAG, "I2C bus reset failed: %s", esp_err_to_name(err));
+    }
+}
 
 /* ========== I2C 读写底层 ========== */
 static esp_err_t touch_write_reg(uint16_t reg, const uint8_t *data, size_t len)
@@ -34,13 +62,13 @@ static esp_err_t touch_write_reg(uint16_t reg, const uint8_t *data, size_t len)
     if (len > 0 && data != NULL) {
         memcpy(&buf[2], data, len);
     }
-    return i2c_master_transmit(touch_dev, buf, 2 + len, -1);
+    return i2c_master_transmit(touch_dev, buf, 2 + len, TOUCH_I2C_TIMEOUT_MS);
 }
 
 static esp_err_t touch_read_reg(uint16_t reg, uint8_t *data, size_t len)
 {
     uint8_t addr[2] = { (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF) };
-    return i2c_master_transmit_receive(touch_dev, addr, 2, data, len, -1);
+    return i2c_master_transmit_receive(touch_dev, addr, 2, data, len, TOUCH_I2C_TIMEOUT_MS);
 }
 
 /* ========== 初始化 ========== */
@@ -72,12 +100,22 @@ esp_err_t bsp_touch_init(void)
     set_tp_rst_up();
     vTaskDelay(pdMS_TO_TICKS(300));
 
-    /* 4. 读取产品 ID 验证通信 */
+    /* 4. 读取产品 ID 验证通信（失败重试几次，仍失败说明触摸不可用） */
     uint8_t pid[4] = {0};
-    if (touch_read_reg(GT1151_REG_PID, pid, 4) == ESP_OK) {
+    esp_err_t pid_err = ESP_FAIL;
+    for (int i = 0; i < 3; i++) {
+        pid_err = touch_read_reg(GT1151_REG_PID, pid, 4);
+        if (pid_err == ESP_OK) {
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+    if (pid_err == ESP_OK) {
         ESP_LOGI(TAG, "Touch IC ID: %c%c%c%c", pid[0], pid[1], pid[2], pid[3]);
     } else {
-        ESP_LOGW(TAG, "Failed to read Touch IC ID");
+        /* 注意：这里不返回错误，避免整个 UI 起不来；但触摸会不可用，必须能从日志看出来 */
+        ESP_LOGE(TAG, "Failed to read Touch IC ID (%s), touch will not work",
+                 esp_err_to_name(pid_err));
     }
 
     ESP_LOGI(TAG, "Touch initialized");
@@ -98,6 +136,7 @@ esp_err_t bsp_touch_read(bsp_touch_point_t *point)
     uint8_t status = 0;
     esp_err_t ret = touch_read_reg(GT1151_REG_STATUS, &status, 1);
     if (ret != ESP_OK) {
+        touch_try_recover();
         return ret;
     }
 

@@ -17,7 +17,7 @@
  *
  * Tool            : GUI Guider
  * Version         : 2.0.1
- * Generated on    : 2026/10/24
+ * Generated on    : 2026/10/26
  * ------------------------------------------------------------------------------
  */
 
@@ -45,8 +45,15 @@ typedef struct {
 
 typedef struct {
     lv_obj_t * screen;
-    lv_obj_t * button_1;
-    lv_obj_t * button_1_button_1_label;
+    lv_obj_t * slider_1_copy1_copy_copy_copy_copy_copy;
+    lv_obj_t * slider_1_copy1_copy_copy_copy_copy;
+    lv_obj_t * slider_1_copy1_copy_copy_copy;
+    lv_obj_t * slider_1_copy1_copy_copy;
+    lv_obj_t * slider_1_copy1_copy;
+    lv_obj_t * slider_1_copy2;
+    lv_obj_t * slider_1_copy1;
+    lv_obj_t * slider_1_copy;
+    lv_obj_t * slider_1;
 } gg_screen_t;
 
 typedef struct {

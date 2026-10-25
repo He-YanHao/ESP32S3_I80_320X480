@@ -17,7 +17,7 @@
  *
  * Tool            : GUI Guider
  * Version         : 2.0.1
- * Generated on    : 2026/10/24
+ * Generated on    : 2026/10/26
  * ------------------------------------------------------------------------------
  */
 
@@ -31,21 +31,104 @@ void setup_screen(gg_ui_t * ui)
     ui->screen.screen = lv_obj_create(NULL);
     lv_obj_set_user_data(ui->screen.screen, &ui->screen.screen);
 
-    // Create button: ui->screen.button_1
-    ui->screen.button_1 = lv_button_create(ui->screen.screen);
-    lv_obj_set_width(ui->screen.button_1, 100);
-    lv_obj_set_height(ui->screen.button_1, 50);
-    lv_obj_set_align(ui->screen.button_1, LV_ALIGN_TOP_LEFT);
-    lv_obj_set_x(ui->screen.button_1, 0);
-    lv_obj_set_y(ui->screen.button_1, 0);
+    // Create slider: ui->screen.slider_1
+    ui->screen.slider_1 = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1, 304);
+    lv_obj_set_height(ui->screen.slider_1, 31);
+    lv_obj_set_align(ui->screen.slider_1, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1, 8);
+    lv_obj_set_y(ui->screen.slider_1, 30);
 
-    // Create label: ui->screen.button_1_button_1_label
-    ui->screen.button_1_button_1_label = lv_label_create(ui->screen.button_1);
-    lv_obj_set_width(ui->screen.button_1_button_1_label, LV_SIZE_CONTENT);
-    lv_obj_set_height(ui->screen.button_1_button_1_label, LV_SIZE_CONTENT);
-    lv_obj_set_align(ui->screen.button_1_button_1_label, LV_ALIGN_CENTER);
-    lv_obj_set_x(ui->screen.button_1_button_1_label, 0);
-    lv_obj_set_y(ui->screen.button_1_button_1_label, 0);
+    // ui->screen.slider_1: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy
+    ui->screen.slider_1_copy = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy, 10);
+    lv_obj_set_y(ui->screen.slider_1_copy, 75);
+
+    // ui->screen.slider_1_copy: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy1
+    ui->screen.slider_1_copy1 = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy1, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy1, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy1, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy1, 8);
+    lv_obj_set_y(ui->screen.slider_1_copy1, 175);
+
+    // ui->screen.slider_1_copy1: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy1, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy2
+    ui->screen.slider_1_copy2 = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy2, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy2, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy2, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy2, 8);
+    lv_obj_set_y(ui->screen.slider_1_copy2, 127);
+
+    // ui->screen.slider_1_copy2: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy2, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy1_copy
+    ui->screen.slider_1_copy1_copy = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy1_copy, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy1_copy, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy1_copy, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy1_copy, 8);
+    lv_obj_set_y(ui->screen.slider_1_copy1_copy, 224);
+
+    // ui->screen.slider_1_copy1_copy: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy1_copy, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy1_copy_copy
+    ui->screen.slider_1_copy1_copy_copy = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy1_copy_copy, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy1_copy_copy, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy1_copy_copy, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy1_copy_copy, 8);
+    lv_obj_set_y(ui->screen.slider_1_copy1_copy_copy, 270);
+
+    // ui->screen.slider_1_copy1_copy_copy: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy1_copy_copy, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy1_copy_copy_copy
+    ui->screen.slider_1_copy1_copy_copy_copy = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy1_copy_copy_copy, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy1_copy_copy_copy, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy1_copy_copy_copy, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy1_copy_copy_copy, 8);
+    lv_obj_set_y(ui->screen.slider_1_copy1_copy_copy_copy, 318);
+
+    // ui->screen.slider_1_copy1_copy_copy_copy: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy1_copy_copy_copy, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy1_copy_copy_copy_copy
+    ui->screen.slider_1_copy1_copy_copy_copy_copy = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy1_copy_copy_copy_copy, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy1_copy_copy_copy_copy, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy1_copy_copy_copy_copy, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy1_copy_copy_copy_copy, 10);
+    lv_obj_set_y(ui->screen.slider_1_copy1_copy_copy_copy_copy, 366);
+
+    // ui->screen.slider_1_copy1_copy_copy_copy_copy: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy1_copy_copy_copy_copy, 50, LV_ANIM_OFF);
+
+    // Create slider: ui->screen.slider_1_copy1_copy_copy_copy_copy_copy
+    ui->screen.slider_1_copy1_copy_copy_copy_copy_copy = lv_slider_create(ui->screen.screen);
+    lv_obj_set_width(ui->screen.slider_1_copy1_copy_copy_copy_copy_copy, 304);
+    lv_obj_set_height(ui->screen.slider_1_copy1_copy_copy_copy_copy_copy, 31);
+    lv_obj_set_align(ui->screen.slider_1_copy1_copy_copy_copy_copy_copy, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_x(ui->screen.slider_1_copy1_copy_copy_copy_copy_copy, 8);
+    lv_obj_set_y(ui->screen.slider_1_copy1_copy_copy_copy_copy_copy, 419);
+
+    // ui->screen.slider_1_copy1_copy_copy_copy_copy_copy: attributes applied after styles
+    lv_slider_set_value(ui->screen.slider_1_copy1_copy_copy_copy_copy_copy, 50, LV_ANIM_OFF);
 
     // screen custom code
 
