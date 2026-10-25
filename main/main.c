@@ -56,4 +56,16 @@ void app_main(void) {
         return;
     }
     ESP_LOGI(TAG, "LVGL initialized");
+
+    // 4. 简单界面验证（所有 LVGL 调用必须在锁内进行）
+    lvgl_lock();
+    lv_obj_t *label = lv_label_create(lv_screen_active());
+    lv_label_set_text(label, "Hello LVGL 9.4");
+    lv_obj_center(label);
+    lvgl_unlock();
+
+    while (1) {
+        ESP_LOGI(TAG, "running...");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
