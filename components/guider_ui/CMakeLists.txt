@@ -18,5 +18,4 @@ idf_component_register(
         "${GUIDER_ROOT}/custom"
     REQUIRES
         lvgl__lvgl
-        lvgl_init
 )

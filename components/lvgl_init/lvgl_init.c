@@ -8,15 +8,21 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
-
-// 引入你现有的 BSP 头文件
 #include "bsp_lcd.h"
 #include "bsp_touch.h"
+#include "gui_guider.h"
+#include "gg_utils.h"
+#include "custom.h"
+
+// 定义全局 UI 结构体（extern 声明在 gui_guider.h 中）
+gg_ui_t guider_ui;
+
 
 static const char *TAG = "lvgl_init";
 
 static esp_lcd_panel_handle_t s_panel = NULL;
 static lv_display_t          *s_disp  = NULL;
+static lv_indev_t            *s_indev = NULL;
 
 // 局部刷新缓冲（与旧版 LVGL8 一致的 60 行，从 PSRAM 分配）
 #define DRAW_BUF_LINES    60
@@ -41,6 +47,48 @@ static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px
     lv_display_flush_ready(disp);
 }
 
+/*
+ * 触摸方向配置。
+ * GT1151Q 上报的是面板原始坐标；若点击位置与画面方向不一致，改下面的宏即可：
+ *   - TOUCH_SWAP_XY：交换 X/Y（横竖屏方向相反时打开）
+ *   - TOUCH_MIRROR_X / TOUCH_MIRROR_Y：镜像对应轴
+ * 本屏 bsp_lcd.c 里对 LCD 做了 x 轴镜像（esp_lcd_panel_mirror(true, false)），
+ * 如果触摸左右相反，把 TOUCH_MIRROR_X 改成 1。
+ */
+#define TOUCH_SWAP_XY     0
+#define TOUCH_MIRROR_X    0
+#define TOUCH_MIRROR_Y    0
+
+static void lvgl_touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data)
+{
+    (void)indev;
+
+    bsp_touch_point_t pt;
+    if (bsp_touch_read(&pt) != ESP_OK || !pt.pressed) {
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
+    int32_t x = pt.x;
+    int32_t y = pt.y;
+
+#if TOUCH_SWAP_XY
+    int32_t tmp = x;
+    x = y;
+    y = tmp;
+#endif
+#if TOUCH_MIRROR_X
+    x = (TOUCH_SWAP_XY ? LCD_V_RES : LCD_H_RES) - 1 - x;
+#endif
+#if TOUCH_MIRROR_Y
+    y = (TOUCH_SWAP_XY ? LCD_H_RES : LCD_V_RES) - 1 - y;
+#endif
+
+    data->point.x = x;
+    data->point.y = y;
+    data->state = LV_INDEV_STATE_PRESSED;
+}
+
 bool lvgl_lock(void)
 {
     return esp_lv_adapter_lock(-1) == ESP_OK;
@@ -58,8 +106,6 @@ void lvgl_unlock(void)
 
 esp_err_t lvgl_init(void)
 {
-    esp_err_t ret;
-
     // 1. 初始化 LCD 硬件（I80 + ST7796）
     ESP_RETURN_ON_ERROR(bsp_lcd_init(), TAG, "bsp_lcd_init failed");
     s_panel = bsp_lcd_get_panel();
@@ -83,8 +129,23 @@ esp_err_t lvgl_init(void)
     lv_display_set_flush_cb(s_disp, lvgl_flush_cb);
     lv_display_set_buffers(s_disp, buf1, buf2, BUF_SIZE_BYTES, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
-    // 5. 启动适配器任务（内部会周期调用 lv_timer_handler）
+    // 5. 手动创建 LVGL 指针输入设备并绑定到该显示
+    //    bsp_touch 是裸 I2C 驱动，没有 esp_lcd_touch_handle_t，所以不用 adapter 的触摸注册
+    s_indev = lv_indev_create();
+    ESP_RETURN_ON_FALSE(s_indev, ESP_ERR_NO_MEM, TAG, "indev create failed");
+    lv_indev_set_type(s_indev, LV_INDEV_TYPE_POINTER);
+    lv_indev_set_read_cb(s_indev, lvgl_touch_read_cb);
+    lv_indev_set_display(s_indev, s_disp);
+
+    // 6. 启动适配器任务（内部会周期调用 lv_timer_handler）
     ESP_RETURN_ON_ERROR(esp_lv_adapter_start(), TAG, "adapter start failed");
+
+    // GUI Guider 2.x：setup_ui 内部已包含 lay_sys/top/bottom/screen 的创建
+    // 以及各自的 gg_event_init_*，无需再调用 events_init。
+    lvgl_lock();
+    setup_ui(&guider_ui);
+    custom_init(&guider_ui);
+    lvgl_unlock();
 
     ESP_LOGI(TAG, "LVGL init ok (manual display, I80)");
     return ESP_OK;
